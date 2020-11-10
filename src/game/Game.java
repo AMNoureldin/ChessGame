@@ -39,6 +39,7 @@ public class Game {
         this.boardPane = boardPane;
         active = new HashMap<>();
         kills = new HashMap<>();
+        wTurn = true;
         initStd();
     }
 
@@ -71,7 +72,7 @@ public class Game {
         }
         drawInitialBoard();
     }
-    private Status checkStatus(){
+    public Status checkStatus(){
         //TODO Implement method that checks game outcomes
         if (inCheck()) {
             if(noLegalMoves()) return Status.CHECKMATE;
@@ -370,6 +371,26 @@ public class Game {
         if (!active.containsKey(piece)) return null;
         return active.get(piece);
     }
+    public Player getCurrentPlayer(){
+        return wTurn ? wPlayer : bPlayer;
+    }
+    public boolean validateMove(Move move){
+        if (move.getPieceMoved().canMove(board, move.getStart(), move.getFinish())){
+            movesList.add(move);
+            applyMove(move);
+            if(inCheck()){
+                undoMove();
+                return false;
+            }
+            wTurn = !wTurn;
+            if(move.getPieceMoved()  instanceof Pawn){
+                ((Pawn) move.getPieceMoved()).setHasMoved(true);
+            }
+            //gameStatus = checkStatus();
+            return true;
+        }
+        return false;
+    }
     public void play(){
         //TODO Add check for casteling if move possible
         wTurn = true;
@@ -389,7 +410,4 @@ public class Game {
             drawBoard();
         }
     }
-}
-enum Status{
-    ONGOING,CHECK,CHECKMATE,STALEMATE,RESIGNATION
 }

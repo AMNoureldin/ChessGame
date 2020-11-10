@@ -11,12 +11,16 @@ public class Pawn extends Piece {
     private final static String bURL = "file:misc/Chess_pdt60.png";
     private final static int SCORE = 1;
 
+
+
     public Pawn(boolean isWhite) {
         super(isWhite, SCORE);
         hasMoved = false;
         enPassant = false;
     }
-
+    public void setHasMoved(boolean hasMoved) {
+        this.hasMoved = hasMoved;
+    }
     @Override
     public boolean canMove(Board board, Spot start, Spot end) {
         if (!super.canMove(board,start,end)) return false;
@@ -29,7 +33,7 @@ public class Pawn extends Piece {
             if(end.getPiece().isPresent()) return false;
             if(y == 2 && !hasMoved) {
                 boolean clear = clearWay(board, start, end);
-                hasMoved = clear;
+                //hasMoved = clear;
                 return clear;
             }
             return y == 1;
