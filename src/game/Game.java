@@ -17,7 +17,7 @@ public class Game {
     private ArrayList<Piece> wKills;
     private ArrayList<Piece> bKills;
     private int wScore, bScore;
-
+    private int moveCounter;
     private GridPane boardPane;
     private HashMap<Piece, PieceCanvas> active;
     private HashMap<Piece, PieceCanvas> kills;
@@ -31,6 +31,7 @@ public class Game {
         this.wPlayer = wPlayer;
         this.bPlayer = bPlayer;
         board = Board.getBoard();
+        moveCounter = 1;
         wScore = 39;
         bScore = 39;
         wKills = new ArrayList<>();
@@ -76,7 +77,7 @@ public class Game {
         //TODO Implement method that checks game outcomes
         if (inCheck()) {
             if(noLegalMoves()) return Status.CHECKMATE;
-            return Status.CHECK;
+            return Status.ONGOING;
         }
         else{
             if(noLegalMoves()) return Status.STALEMATE;
@@ -87,8 +88,12 @@ public class Game {
     // Checks if the current player in check
     private boolean inCheck(){
         //Player currentPlayer, oppPlayer;
+        return inCheck(this.board, wTurn);
+
+    }
+    public static boolean inCheck(Board board, boolean wTurn){
         ArrayList<Spot> opponentPositions= board.getPlayerPositions(!wTurn);
-        Spot curKingPos = wTurn ? wKingPos : bKingPos;
+        Spot curKingPos = board.getKingSpot(wTurn);
         /*if (wTurn){
             currentPlayer = wPlayer;
             oppPlayer = bPlayer;
@@ -102,22 +107,22 @@ public class Game {
             }
         }
         return false;
-
     }
     private boolean noLegalMoves(){
         ArrayList<Spot> playerPositions= board.getPlayerPositions(wTurn);
         ArrayList<ArrayList<Move>> allMoves = new ArrayList<>();
+        Board localBoard = board.clone();
         for(Spot pos: playerPositions){
-            allMoves.add(getLegalMoves(pos));
+            allMoves.add(getLegalMoves(localBoard, pos.getX(),pos.getY()));
         }
         for (ArrayList<Move> moveList : allMoves){
             for(Move curMove : moveList){
-                applyMove(curMove);
-                if (inCheck()){
-                    undoMove(this.board, curMove);
+                applyMove(localBoard, curMove);
+                if (inCheck(localBoard, wTurn)){
+                    undoMove(localBoard, curMove);
                 }
                 else {
-                    undoMove(this.board, curMove);
+                    undoMove(localBoard, curMove);
                     return false;
                 }
             }
@@ -125,20 +130,23 @@ public class Game {
         //System.out.println("CHECKMATE");
         return true;
     }
-
-    public ArrayList<Move> getLegalMoves(Spot position){
+    public static ArrayList<Move> getLegalMoves(Board board, int x, int y){
+        Spot position = board.getSpot(x, y);
         if (!position.getPiece().isPresent()) return null;
         ArrayList<Move> moves = new ArrayList<>();
         Piece curPiece = position.getPiece().get();
         for (int i=0; i<8 ; i++) {
             for (int j = 0; j < 8; j++) {
                 Spot finish = board.getSpot(i,j);
-                if (curPiece.canMove(board, position, board.getSpot(i,j))){
+                if (curPiece.canMove(board, position, finish)){
                     moves.add(new Move(position, finish, false));
                 }
             }
         }
         return moves;
+    }
+    private ArrayList<Move> getLegalMoves(Spot position){
+        return getLegalMoves(this.board, position.getX(), position.getY());
     }
 
 
@@ -202,7 +210,7 @@ public class Game {
                 wScore = wScore - killed.getScore();
             }
             kills.put(killed, active.get(killed));
-            active.remove(killed);
+            //active.remove(killed);
         }
         if (pieceMoved instanceof King){
             if (pieceMoved.isWhite()) wKingPos = move.getFinish();
@@ -228,7 +236,7 @@ public class Game {
         Piece pieceKilled = lastMove.getPieceKilled();
         undoMove(this.board, lastMove);
         if (pieceKilled != null){
-            active.put(pieceKilled, kills.get(pieceKilled));
+            //active.put(pieceKilled, kills.get(pieceKilled));
             kills.remove(pieceKilled);
         }
 
@@ -371,6 +379,19 @@ public class Game {
         if (!active.containsKey(piece)) return null;
         return active.get(piece);
     }
+
+    public ArrayList<Piece> getwKills() {
+        return wKills;
+    }
+
+    public ArrayList<Piece> getbKills() {
+        return bKills;
+    }
+
+    public int getScore(boolean wTurn){
+        return wTurn ? wScore: bScore;
+    }
+
     public Player getCurrentPlayer(){
         return wTurn ? wPlayer : bPlayer;
     }
@@ -395,7 +416,7 @@ public class Game {
         //TODO Add check for casteling if move possible
         wTurn = true;
         Status gameStatus = Status.ONGOING;
-        while (gameStatus == Status.ONGOING || gameStatus == Status.CHECK){
+        while (gameStatus == Status.ONGOING){
             Move move = wTurn ? wPlayer.getMove() : bPlayer.getMove();
             if (move.getPieceMoved().canMove(board, move.getStart(), move.getFinish())){
                 movesList.add(move);

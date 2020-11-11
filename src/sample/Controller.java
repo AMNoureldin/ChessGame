@@ -4,8 +4,12 @@ import game.*;
 import game.piece.Piece;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -15,7 +19,15 @@ import java.util.concurrent.*;
 
 public class Controller {
     @FXML GridPane boardPane;
-    private String wKingURL = "file:src/sample/Chess_klt60.png";
+    @FXML Label gameStatus;
+    @FXML VBox lKills;
+    @FXML VBox rKills;
+    @FXML Pane whiteLogo;
+    @FXML Pane blackLogo;
+    @FXML Label p1Score;
+    @FXML Label p2Score;
+    private final static String wKingURL = "file:misc/Chess_klt60.png";
+    private final static String bKingURL = "file:misc/Chess_kdt60.png";
     private PieceCanvas selected;
     private Game aGame;
     private Move nextMove;
@@ -60,12 +72,33 @@ public class Controller {
         Status status = aGame.checkStatus();
         adrawBoard();
         Player currentPlayer = aGame.getCurrentPlayer();
+        drawPlayerLogos();
         startTurn();
+    }
+    private void drawPlayerLogos(){
+        Canvas wCanvas = new Canvas(whiteLogo.getWidth(), whiteLogo.getHeight());
+        wCanvas.heightProperty().bind(whiteLogo.heightProperty());
+        wCanvas.widthProperty().bind(whiteLogo.widthProperty());
+        Canvas bCanvas = new Canvas(blackLogo.getWidth(), blackLogo.getHeight());
+        bCanvas.heightProperty().bind(blackLogo.heightProperty());
+        bCanvas.widthProperty().bind(blackLogo.widthProperty());
+        Image wImage = new Image(wKingURL);
+        Image bImage = new Image(bKingURL);
+        GraphicsContext gc = wCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, wCanvas.getWidth(), wCanvas.getHeight());
+        gc.drawImage(wImage, 0, 0, wCanvas.getWidth(), wCanvas.getHeight());
+        gc = bCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, bCanvas.getWidth(), bCanvas.getHeight());
+        gc.drawImage(bImage, 0, 0, bCanvas.getWidth(), bCanvas.getHeight());
+        whiteLogo.getChildren().add(wCanvas);
+        blackLogo.getChildren().add(bCanvas);
     }
     private void startTurn(){
         adrawBoard();
         Status status = aGame.checkStatus();
+        gameStatus.setText(status.toString());
         Player currentPlayer = aGame.getCurrentPlayer();
+        updateScore();
         if (status == Status.ONGOING){
             if(currentPlayer instanceof ComputerPlayer){
                 aGame.validateMove(currentPlayer.getMove());
@@ -76,6 +109,18 @@ public class Controller {
             }
         }
 
+    }
+    private void updateScore(){
+        int wScore =  aGame.getScore(true);
+        int bScore = aGame.getScore(false);
+        if (wScore - bScore >= 0){
+            p1Score.setText(Integer.toString(0));
+            p2Score.setText(Integer.toString(bScore - wScore));
+        }
+        else {
+            p1Score.setText(Integer.toString(wScore - bScore));
+            p2Score.setText(Integer.toString(0));
+        }
     }
     private void pushMove(Move move){
         boolean valid = aGame.validateMove(move);
@@ -149,6 +194,26 @@ public class Controller {
                 }
                 gridSpot.setBorder(null);
             }
+        }
+        ArrayList<Piece> wKills = aGame.getwKills();
+        ArrayList<Piece> bKills = aGame.getbKills();
+        lKills.getChildren().clear();
+        rKills.getChildren().clear();
+        for(Piece piece : wKills){
+            PieceCanvas pieceCanvas = aGame.getCanvas(piece);
+            VBox piecePane = new VBox();
+            piecePane.getChildren().add(pieceCanvas);
+            piecePane.setAlignment(Pos.TOP_CENTER);
+            //VBox.setVgrow(piecePane, Priority.ALWAYS);
+            lKills.getChildren().add(0, piecePane);
+        }
+        for(Piece piece : bKills){
+            PieceCanvas pieceCanvas = aGame.getCanvas(piece);
+            VBox piecePane = new VBox();
+            piecePane.getChildren().add(pieceCanvas);
+            rKills.setAlignment(Pos.BOTTOM_CENTER);
+            //VBox.setVgrow(piecePane, Priority.ALWAYS);
+            rKills.getChildren().add(0, piecePane);
         }
 
     }

@@ -12,7 +12,7 @@ public class ChessGame extends Application {
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("gamewindow.fxml"));
         primaryStage.setTitle("Chess");
-        primaryStage.setScene(new Scene(root, 300, 275));
+        primaryStage.setScene(new Scene(root, 755, 755));
         primaryStage.show();
     }
 

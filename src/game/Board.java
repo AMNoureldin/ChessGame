@@ -1,5 +1,6 @@
 package game;
 
+import game.piece.King;
 import game.piece.Piece;
 
 import java.util.ArrayList;
@@ -36,8 +37,18 @@ public class Board {
         }
         return positions;
     }
-    public Spot getKingSpot(){
-        return null; //TODO Implement get KingSpot as solution to updating the kings positons in game
+    public Spot getKingSpot(boolean isWhite){
+        for (int i=0; i<8 ; i++){
+            for(int j=0; j<8; j++){
+                Optional<Piece> piece = boxes[i][j].getPiece();
+                if (piece.isPresent()){
+                    if(piece.get().isWhite() == isWhite && piece.get() instanceof King){
+                        return boxes[i][j];
+                    }
+                }
+            }
+        }
+        return null;
     }
     public Spot getSpot(int x, int y){
         return boxes[x][y];
@@ -50,5 +61,17 @@ public class Board {
 
     void reset(){
         board = new Board();
+    }
+    public Board clone(){
+        Board newBoard = new Board();
+        for(int i=0; i < 8; i++){
+            for(int j=0; j < 8; j++){
+                Optional<Piece> piece = this.boxes[i][j].getPiece();
+                if(piece.isPresent()){
+                    newBoard.boxes[i][j].setPiece(piece.get());
+                }
+            }
+        }
+        return newBoard;
     }
 }
