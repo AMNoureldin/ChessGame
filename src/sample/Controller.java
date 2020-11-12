@@ -36,7 +36,6 @@ public class Controller {
     //TODO Find a way to display killed pieces on display
     //TODO Change game start resolution and make the board scale correctly
 
-
 //    public void testButton(){
 //        Pane pane = (Pane) boardPane.getChildren().get(4);
 //        double x = pane.getWidth();
