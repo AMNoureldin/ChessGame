@@ -23,6 +23,7 @@ public class Game {
     private boolean wTurn;
     private Spot wKingPos, bKingPos;
     private LinkedList<Move> movesList;
+    private Pawn enPassantPawn;
     //TODO Test all pieces for correct movement
     //TODO Run full game then declare winner.
     public Game(Player wPlayer, Player bPlayer, GridPane boardPane) {
@@ -288,7 +289,20 @@ public class Game {
             }
             wTurn = !wTurn;
             if(move.getPieceMoved()  instanceof Pawn){
-                ((Pawn) move.getPieceMoved()).setHasMoved(true);
+                Pawn pieceMoved = (Pawn) move.getPieceMoved();
+                if (!pieceMoved.hasMoved()){
+                    pieceMoved.setEnPassant(true);
+                    if(enPassantPawn != null){
+                        enPassantPawn.setEnPassant(false);
+                    }
+                    enPassantPawn = pieceMoved;
+                }
+                pieceMoved.setHasMoved(true);
+                return true;
+            }
+            if(enPassantPawn != null){
+                enPassantPawn.setEnPassant(false);
+                enPassantPawn = null;
             }
             //gameStatus = checkStatus();
             return true;

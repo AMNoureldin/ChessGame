@@ -21,6 +21,15 @@ public class Pawn extends Piece {
     public void setHasMoved(boolean hasMoved) {
         this.hasMoved = hasMoved;
     }
+
+    public void setEnPassant(boolean enPassant) {
+        this.enPassant = enPassant;
+    }
+
+    public boolean hasMoved() {
+        return hasMoved;
+    }
+
     @Override
     public boolean canMove(Board board, Spot start, Spot end) {
         if (!super.canMove(board,start,end)) return false;
