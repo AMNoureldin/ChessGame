@@ -51,11 +51,14 @@ public class Board {
         return null;
     }
     public Spot getSpot(int x, int y){
+        if (x > 7 || x < 0 || y > 7 || y < 0) return null;
+
         return boxes[x][y];
     }
 
     void setSpot(int x, int y, Piece piece){
         Spot spot = getSpot(x, y);
+        if (spot == null) return;
         spot.setPiece(piece);
     }
 

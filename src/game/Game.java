@@ -13,7 +13,6 @@ import java.util.LinkedList;
 public class Game {
     private Player wPlayer, bPlayer;
     private Board board;
-    private static Move move;
     private ArrayList<Piece> wKills;
     private ArrayList<Piece> bKills;
     private int wScore, bScore;
@@ -21,7 +20,6 @@ public class Game {
     private GridPane boardPane;
     private HashMap<Piece, PieceCanvas> active;
     private HashMap<Piece, PieceCanvas> kills;
-    private PieceCanvas selected;
     private boolean wTurn;
     private Spot wKingPos, bKingPos;
     private LinkedList<Move> movesList;
@@ -74,7 +72,7 @@ public class Game {
         drawInitialBoard();
     }
     public Status checkStatus(){
-        //TODO Implement method that checks game outcomes
+        //TODO Implement resignation and draw
         if (inCheck()) {
             if(noLegalMoves()) return Status.CHECKMATE;
             return Status.ONGOING;
@@ -87,18 +85,13 @@ public class Game {
 
     // Checks if the current player in check
     private boolean inCheck(){
-        //Player currentPlayer, oppPlayer;
         return inCheck(this.board, wTurn);
 
     }
     public static boolean inCheck(Board board, boolean wTurn){
         ArrayList<Spot> opponentPositions= board.getPlayerPositions(!wTurn);
         Spot curKingPos = board.getKingSpot(wTurn);
-        /*if (wTurn){
-            currentPlayer = wPlayer;
-            oppPlayer = bPlayer;
-            curKingPos = wKingPos;
-        }*/
+
         for (Spot position : opponentPositions){
             Piece curPiece = position.getPiece().get();
             if(curPiece.canMove(board, position, curKingPos)){
@@ -132,6 +125,7 @@ public class Game {
     }
     public static ArrayList<Move> getLegalMoves(Board board, int x, int y){
         Spot position = board.getSpot(x, y);
+        if (position == null) return null;
         if (!position.getPiece().isPresent()) return null;
         ArrayList<Move> moves = new ArrayList<>();
         Piece curPiece = position.getPiece().get();
@@ -153,38 +147,7 @@ public class Game {
     public Board getGameBoard() {
         return board;
     }
-    /*private void aapplyMove(Move move){
-        Spot start = move.getStart();
-        Spot finish = move.getFinish();
-        Piece pieceMoved = move.getPieceMoved();
-        Pane startPane = (Pane) active.get(pieceMoved).getParent();
-        Pane endPane = (Pane) getNodeFromGridPane(boardPane, finish.getX(), finish.getY());
-        startPane.getChildren().removeAll();
-        start.setPiece(null);
-        if(finish.getPiece().isPresent() && endPane != null){
-            Piece killed = finish.getPiece().get();
-            move.setPieceKilled(killed);
-            if (wTurn) {
-                wKills.add(killed);
-                bScore = bScore - killed.getScore();
-            }
-            else {
-                bKills.add(killed);
-                wScore = wScore - killed.getScore();
-            }
 
-            Platform.runLater(()-> {endPane.getChildren().clear(); });
-            kills.put(killed, active.get(killed));
-            active.remove(killed);
-        }
-        board.setSpot(finish.getX(), finish.getY(), pieceMoved);
-        if (pieceMoved instanceof King){
-            if (pieceMoved.isWhite()) wKingPos = finish;
-            else bKingPos = finish;
-        }
-        Platform.runLater(()-> {endPane.getChildren().add(active.get(pieceMoved));});
-
-    }*/
     public static void applyMove(Board board, Move move){
         Spot start = move.getStart();
         Spot finish = move.getFinish();
@@ -286,87 +249,7 @@ public class Game {
         wPlayer.setPieces(wPieces);
         bPlayer.setPieces(bPieces);
     }
-    /*private void redrawBoard(){
-        for(int i=0; i<8; i++){
-            for(int j=0; i<8; i++){
-                Spot boardSpot = board.getSpot(i, j);
-                Pane gridSpot = (Pane) getNodeFromGridPane(boardPane, i, j);
-                if(boardSpot.getPiece().isPresent()){
-                    PieceCanvas pieceCanvas = active.get(boardSpot.getPiece().get());
-                    pieceCanvas.setPareb
-                }
-            }
-        }
-    }*/
-    /*
-    private void activatePieces(boolean isWhite){
-        for(Piece piece : active.keySet()){
-            if (piece.isWhite() == isWhite){
-                active.get(piece).setOnMouseClicked(selectPiece);
-            }
-        }
-    }
-    private void deactivatePieces(boolean isWhite){
-        for(Piece piece : active.keySet()){
-            if(piece.isWhite() == isWhite){
-                active.get(piece).setOnMouseClicked(null);
-            }
-        }
-    }
-    private void activateTiles(boolean isWhite){
-        for (int i=0; i < 8; i++){
-            for (int j=0; j < 8; j++){
-                Spot cur = board.getSpot(i, j);
-                Pane pane = (Pane) getNodeFromGridPane(boardPane, i, j);
-                if (!cur.getPiece().isPresent()){
-                    pane.setOnMouseClicked(selectSpot);
-                }
-                Piece piece = cur.getPiece().get();
-                if (piece.isWhite() != isWhite){
-                    pane.setOnMouseClicked(selectSpot);
-                }
-            }
-        }
-    }
-    private EventHandler<MouseEvent> selectSpot = new EventHandler<MouseEvent>() {
-        @Override
-        public void handle(MouseEvent mouseEvent) {
-            if (selected == null || !(mouseEvent.getSource() instanceof Pane)) return;
-            Pane endPane = (Pane) mouseEvent.getSource();
-            Pane startPane = (Pane) selected.getParent();
-            int y1 = GridPane.getRowIndex(endPane);
-            int x1 = GridPane.getColumnIndex(endPane);
-            int y0 = GridPane.getRowIndex(startPane);
-            int x0 = GridPane.getColumnIndex(startPane);
-            Spot start = board.getSpot(x0, y0);
-            Spot end = board.getSpot(x1, y1);
-            Move move = new Move(start, end, false);
-            if (wTurn) {
-                ((HumanPlayer) wPlayer).pushMove(move);
-            } else {
-                ((HumanPlayer) bPlayer).pushMove(move);
-            }
-            /*endPane.getChildren().removeAll();
-            startPane.getChildren().removeAll();
-            endPane.getChildren().add(selected);
-            selected = null;
-        }
-    };
-    private EventHandler<MouseEvent> selectPiece = new EventHandler<MouseEvent>(){
 
-        public void handle(MouseEvent event){
-            if(selected != null) {
-                Pane pane = (Pane) selected.getParent();
-                pane.setBorder(null);
-            }
-            PieceCanvas canvas = (PieceCanvas) event.getSource();
-            Pane pane = (Pane) canvas.getParent();
-            pane.setBorder(new Border(new BorderStroke(Color.DARKRED,
-                    BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
-            selected = canvas;
-            event.consume();
-        }
-    };*/
     protected static Node getNodeFromGridPane(GridPane gridPane, int col, int row) {
         for (Node node : gridPane.getChildren()) {
             if (GridPane.getColumnIndex(node) == col && GridPane.getRowIndex(node) == row) {
@@ -412,23 +295,5 @@ public class Game {
         }
         return false;
     }
-    public void play(){
-        //TODO Add check for casteling if move possible
-        wTurn = true;
-        Status gameStatus = Status.ONGOING;
-        while (gameStatus == Status.ONGOING){
-            Move move = wTurn ? wPlayer.getMove() : bPlayer.getMove();
-            if (move.getPieceMoved().canMove(board, move.getStart(), move.getFinish())){
-                movesList.add(move);
-                applyMove(move);
-                if(inCheck()){
-                    undoMove();
-                    continue;
-                }
-                wTurn = !wTurn;
-                gameStatus = checkStatus();
-            }
-            drawBoard();
-        }
-    }
+
 }
