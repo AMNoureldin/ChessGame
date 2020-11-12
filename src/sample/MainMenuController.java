@@ -1,7 +1,6 @@
 package sample;
 
-//mport javafx.fxml.FXML;
-import javafx.embed.swing.SwingFXUtils;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -12,11 +11,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.TranscoderInput;
 
-import java.io.IOException;
-import java.io.InputStream;
 
 public class MainMenuController {
     @FXML TextField p1Name;
@@ -28,7 +23,7 @@ public class MainMenuController {
 
 
     private final static String logoURL = "file:misc/Logo.png";
-
+    //TODO Display Logo properly with resizability
     @FXML
     public void drawLogo(){
         //Canvas logo = new Canvas(gameLogo.getWidth(), gameLogo.getHeight());
@@ -52,6 +47,8 @@ public class MainMenuController {
     @FXML
     private void startGame(ActionEvent actionEvent){
         Stage primaryStage = (Stage)((Node) actionEvent.getSource()).getScene().getWindow();
+        gameController.setupGame(p1Name.getText(), p2Name.getText());
         primaryStage.setScene(gameScene);
+
     }
 }

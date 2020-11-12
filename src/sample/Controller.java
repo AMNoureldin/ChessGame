@@ -26,45 +26,24 @@ public class Controller {
     @FXML Pane blackLogo;
     @FXML Label p1Score;
     @FXML Label p2Score;
+    @FXML Label p1Name;
+    @FXML Label p2Name;
     private final static String wKingURL = "file:misc/Chess_klt60.png";
     private final static String bKingURL = "file:misc/Chess_kdt60.png";
     private PieceCanvas selected;
     private Game aGame;
     private Move nextMove;
 
-    //TODO Design and implement main menu
-    //TODO Find a way to display killed pieces on display
-    //TODO Change game start resolution and make the board scale correctly
 
-//    public void testButton(){
-//        Pane pane = (Pane) boardPane.getChildren().get(4);
-//        double x = pane.getWidth();
-//        double y = pane.getHeight();
-//        Canvas canvas = new Canvas(x, y);
-//        GraphicsContext gc = canvas.getGraphicsContext2D();
-//        Image icon = new Image(wKingURL);
-//        gc.drawImage(icon, 0, 0, x, y);
-//        pane.getChildren().add(canvas);
-//    }
-//    public void testButton(){
-//        Pane pane = (Pane) boardPane.getChildren().get(4);
-//        double x = pane.getWidth();
-//        double y = pane.getHeight();
-//        Image icon = new Image(wKingURL);
-//        PieceCanvas canvas = new PieceCanvas(x, y, icon);
-//        canvas.widthProperty().bind(pane.widthProperty());
-//        canvas.heightProperty().bind(pane.heightProperty());
-//        GraphicsContext gc = canvas.getGraphicsContext2D();
-//        gc.drawImage(icon, 0, 0, x, y);
-//        pane.getChildren().add(canvas);
-//    }
-    //@FXML
-    /*private void drawBoard(){
-        Game game = new Game(new HumanPlayer(true, boardPane), new HumanPlayer(false, boardPane), boardPane);
-        Runnable runnable = game::play;
-        Thread gameThread = new Thread(runnable);
-        gameThread.start();
-    }*/
+
+    //TODO Add game timing functionality
+    //TODO Make assignment of white and black random
+
+
+    public void setupGame(String p1Name, String p2Name){
+        this.p1Name.setText(p1Name);
+        this.p2Name.setText(p2Name);
+    }
     @FXML
     private void startGame() throws ExecutionException, InterruptedException {
         aGame = new Game(new HumanPlayer(true, boardPane), new HumanPlayer(false, boardPane), boardPane);
@@ -216,33 +195,7 @@ public class Controller {
         }
 
     }
-    /*@FXML
-    public void drawBoard(){
-        if (aGame != null) return;
-        aGame = new Game(new HumanPlayer(true), new HumanPlayer(false), boardPane);
-        Board board = aGame.getGameBoard();
-        for (int i=0; i < 8; i++){
-            for(int j=0; j<8; j++){
-                Spot cur = board.getSpot(i, j);
-                Pane pane = (Pane) getNodeFromGridPane(boardPane, i, j);
-                if (cur.getPiece().isPresent()) {
-                    double x = pane.getWidth();
-                    double y = pane.getHeight();
-                    Piece curPiece = cur.getPiece().get();
-                    Image icon = new Image(curPiece.getIconURL());
-                    PieceCanvas canvas = new PieceCanvas(x, y, icon);
-                    canvas.widthProperty().bind(pane.widthProperty());
-                    canvas.heightProperty().bind(pane.heightProperty());
-                    GraphicsContext gc = canvas.getGraphicsContext2D();
-                    gc.drawImage(icon, 0, 0, x, y);
-                    canvas.setOnMouseClicked(selectPiece);
-                    pane.getChildren().add(canvas);
-                }
-                pane.setOnMouseClicked(selectSpot);
 
-            }
-        }
-    }*/
     private EventHandler selectPiece = new EventHandler<MouseEvent>(){
 
         public void handle(MouseEvent event){

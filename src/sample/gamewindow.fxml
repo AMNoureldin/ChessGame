@@ -14,7 +14,6 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
 <VBox minHeight="-Infinity" minWidth="-Infinity" prefHeight="713.0" prefWidth="755.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
    <children>
       <MenuBar>
@@ -184,7 +183,7 @@
                                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                 </rowConstraints>
                                  <children>
-                                    <Label text="Player 1">
+                                    <Label fx:id="p1Name" text="Player 1">
                                        <font>
                                           <Font size="17.0" />
                                        </font>
@@ -216,7 +215,7 @@
                                     <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                  </rowConstraints>
                                  <children>
-                                    <Label text="Player 2" GridPane.halignment="RIGHT" GridPane.valignment="CENTER">
+                                    <Label fx:id="p2Name" text="Player 2" GridPane.halignment="RIGHT" GridPane.valignment="CENTER">
                                        <font>
                                           <Font size="17.0" />
                                        </font>
