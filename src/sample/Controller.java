@@ -15,6 +15,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.*;
 
 public class Controller {
@@ -22,8 +23,8 @@ public class Controller {
     @FXML Label gameStatus;
     @FXML VBox lKills;
     @FXML VBox rKills;
-    @FXML Pane whiteLogo;
-    @FXML Pane blackLogo;
+    @FXML Pane player1Logo;
+    @FXML Pane player2Logo;
     @FXML Label p1Score;
     @FXML Label p2Score;
     @FXML Label p1Name;
@@ -33,6 +34,8 @@ public class Controller {
     private PieceCanvas selected;
     private Game aGame;
     private Move nextMove;
+    private boolean isFlipped;
+    private boolean p1White = true;
 
 
 
@@ -43,23 +46,26 @@ public class Controller {
     public void setupGame(String p1Name, String p2Name){
         this.p1Name.setText(p1Name);
         this.p2Name.setText(p2Name);
+        Random rand = new Random();
+        isFlipped = false;
+        p1White = rand.nextInt() % 2 == 0;
     }
     @FXML
     private void startGame() throws ExecutionException, InterruptedException {
         aGame = new Game(new HumanPlayer(true, boardPane), new HumanPlayer(false, boardPane), boardPane);
         Status status = aGame.checkStatus();
-        adrawBoard();
+        drawBoard();
         Player currentPlayer = aGame.getCurrentPlayer();
         drawPlayerLogos();
         startTurn();
     }
     private void drawPlayerLogos(){
-        Canvas wCanvas = new Canvas(whiteLogo.getWidth(), whiteLogo.getHeight());
-        wCanvas.heightProperty().bind(whiteLogo.heightProperty());
-        wCanvas.widthProperty().bind(whiteLogo.widthProperty());
-        Canvas bCanvas = new Canvas(blackLogo.getWidth(), blackLogo.getHeight());
-        bCanvas.heightProperty().bind(blackLogo.heightProperty());
-        bCanvas.widthProperty().bind(blackLogo.widthProperty());
+        Canvas wCanvas = new Canvas(player1Logo.getWidth(), player1Logo.getHeight());
+        wCanvas.heightProperty().bind(player1Logo.heightProperty());
+        wCanvas.widthProperty().bind(player1Logo.widthProperty());
+        Canvas bCanvas = new Canvas(player2Logo.getWidth(), player2Logo.getHeight());
+        bCanvas.heightProperty().bind(player2Logo.heightProperty());
+        bCanvas.widthProperty().bind(player2Logo.widthProperty());
         Image wImage = new Image(wKingURL);
         Image bImage = new Image(bKingURL);
         GraphicsContext gc = wCanvas.getGraphicsContext2D();
@@ -68,11 +74,11 @@ public class Controller {
         gc = bCanvas.getGraphicsContext2D();
         gc.clearRect(0, 0, bCanvas.getWidth(), bCanvas.getHeight());
         gc.drawImage(bImage, 0, 0, bCanvas.getWidth(), bCanvas.getHeight());
-        whiteLogo.getChildren().add(wCanvas);
-        blackLogo.getChildren().add(bCanvas);
+        player1Logo.getChildren().add(wCanvas);
+        player2Logo.getChildren().add(bCanvas);
     }
     private void startTurn(){
-        adrawBoard();
+        drawBoard();
         Status status = aGame.checkStatus();
         gameStatus.setText(status.toString());
         Player currentPlayer = aGame.getCurrentPlayer();
@@ -138,7 +144,8 @@ public class Controller {
         for (int i=0; i < 8; i++){
             for (int j=0; j < 8; j++){
                 Spot cur = aGame.getGameBoard().getSpot(i, j);
-                Pane pane = (Pane) getNodeFromGridPane(boardPane, i, j);
+                Pane pane = (Pane)
+                        (isFlipped ? getNodeFromGridPane(boardPane, i, j) : getNodeFromGridPane(boardPane, i, 7-j));
                 if (!cur.getPiece().isPresent()){
                     pane.setOnMouseClicked(selectSpot);
                 }
@@ -154,17 +161,18 @@ public class Controller {
     private void runGame(){
         Status status = aGame.checkStatus();
         if (status != Status.ONGOING) endGame();
-        adrawBoard();
+        drawBoard();
         Player currentPlayer = aGame.getCurrentPlayer();
 
 
     }
-    private void adrawBoard(){
+    private void drawBoard(){
         Board board = aGame.getGameBoard();
         for (int i=0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 Spot boardSpot = board.getSpot(i, j);
-                Pane gridSpot = (Pane) getNodeFromGridPane(boardPane, i, j);
+                Pane gridSpot =  isFlipped ? (Pane) getNodeFromGridPane(boardPane, i, j) :
+                        (Pane)getNodeFromGridPane(boardPane, i, 7 - j);
                 gridSpot.getChildren().clear();
                 if (boardSpot.getPiece().isPresent()){
                     PieceCanvas canvas = aGame.getCanvas(boardSpot.getPiece().get());
@@ -173,8 +181,8 @@ public class Controller {
                 gridSpot.setBorder(null);
             }
         }
-        ArrayList<Piece> wKills = aGame.getwKills();
-        ArrayList<Piece> bKills = aGame.getbKills();
+        ArrayList<Piece> wKills = isFlipped ? aGame.getwKills() : aGame.getbKills();
+        ArrayList<Piece> bKills = isFlipped ? aGame.getbKills() : aGame.getwKills();
         lKills.getChildren().clear();
         rKills.getChildren().clear();
         for(Piece piece : wKills){
@@ -214,7 +222,12 @@ public class Controller {
         }
     };
 
-    @FXML private EventHandler<MouseEvent> selectSpot = new EventHandler<MouseEvent>() {
+    @FXML
+    private void flipBoard(){
+        isFlipped = !isFlipped;
+        startTurn();
+    }
+    private EventHandler<MouseEvent> selectSpot = new EventHandler<MouseEvent>() {
         @Override
         public void handle(MouseEvent mouseEvent) {
             if (selected == null || !(mouseEvent.getSource() instanceof Pane)) return;
@@ -225,8 +238,9 @@ public class Controller {
             int x1 = GridPane.getColumnIndex(endPane);
             int y0 = GridPane.getRowIndex(startPane);
             int x0 = GridPane.getColumnIndex(startPane);
-            Spot start = aGame.getGameBoard().getSpot(x0, y0);
-            Spot end = aGame.getGameBoard().getSpot(x1, y1);
+            Board gameBoard = aGame.getGameBoard();
+            Spot start = isFlipped ? gameBoard.getSpot(x0, y0) : gameBoard.getSpot(x0, 7 - y0);
+            Spot end = isFlipped ? gameBoard.getSpot(x1, y1) : gameBoard.getSpot(x1, 7 - y1);
             Move move = new Move(start, end, false);
             pushMove(move);
             selected = null;

@@ -26,6 +26,7 @@
           <Menu mnemonicParsing="false" text="Edit">
             <items>
               <MenuItem mnemonicParsing="false" text="Delete" />
+                  <MenuItem mnemonicParsing="false" onAction="#flipBoard" text="Flip Board" />
             </items>
           </Menu>
           <Menu mnemonicParsing="false" text="Help">
@@ -173,7 +174,7 @@
                             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                           </rowConstraints>
                            <children>
-                              <Pane fx:id="whiteLogo" prefHeight="200.0" prefWidth="200.0" />
+                              <Pane fx:id="player1Logo" prefHeight="200.0" prefWidth="200.0" />
                               <GridPane GridPane.columnIndex="1">
                                 <columnConstraints>
                                   <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -227,7 +228,7 @@
                                     </Label>
                                  </children>
                               </GridPane>
-                              <Pane fx:id="blackLogo" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" />
+                              <Pane fx:id="player2Logo" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" />
                            </children>
                         </GridPane>
                      </children>
