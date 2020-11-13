@@ -37,4 +37,11 @@ public class Move {
     public Piece getPieceMoved() {
         return pieceMoved;
     }
+
+    public void setCastleMove() { isCastleMove = true;
+    }
+
+    public boolean isCastleMove() {
+        return isCastleMove;
+    }
 }

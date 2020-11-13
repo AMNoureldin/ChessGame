@@ -75,12 +75,21 @@ public class Game {
     public Status checkStatus(){
         //TODO Implement resignation and draw
         if (inCheck()) {
+            if (wTurn) ((King)wKingPos.getPiece().get()).setInCheck(true);
+            else {
+                ((King)bKingPos.getPiece().get()).setInCheck(true);
+            }
             if(noLegalMoves()) return Status.CHECKMATE;
             return Status.ONGOING;
         }
         else{
             if(noLegalMoves()) return Status.STALEMATE;
+            if (wTurn) ((King)wKingPos.getPiece().get()).setInCheck(false);
+            else {
+                ((King)bKingPos.getPiece().get()).setInCheck(false);
+            }
         }
+
         return Status.ONGOING;
     }
 
@@ -154,11 +163,29 @@ public class Game {
         Spot finish = move.getFinish();
         Piece pieceMoved = move.getPieceMoved();
         start.setPiece(null);
+        if (move.isCastleMove()){
+            applyCastleMove(board, move);
+            return; //TODO apply castling
+        }
         if(finish.getPiece().isPresent()){
             Piece killed = finish.getPiece().get();
             move.setPieceKilled(killed);
         }
         board.setSpot(finish.getX(), finish.getY(), pieceMoved);
+    }
+    private static void applyCastleMove(Board board, Move move){
+        assert move.getFinish().getPiece().isPresent();
+        //Spot start = move.getStart();
+        Spot end = move.getFinish();
+        if (end.getX() == 0){
+            board.setSpot(1, end.getY(), move.getPieceMoved());
+            board.setSpot(2, end.getY(), end.getPiece().get());
+        }
+        else if (end.getX() == 7){
+            board.setSpot(5, end.getY(), move.getPieceMoved());
+            board.setSpot(4, end.getY(), end.getPiece().get());
+        }
+        end.setPiece(null);
     }
     private void applyMove(Move move){
         Piece pieceMoved = move.getPieceMoved();
@@ -176,9 +203,13 @@ public class Game {
             kills.put(killed, active.get(killed));
             //active.remove(killed);
         }
-        if (pieceMoved instanceof King){
+        if (pieceMoved instanceof King && !move.isCastleMove()){
             if (pieceMoved.isWhite()) wKingPos = move.getFinish();
             else bKingPos = move.getFinish();
+        }
+        else if (move.isCastleMove()){
+            if (pieceMoved.isWhite()) wKingPos = board.getKingSpot(true);
+            else bKingPos = board.getKingSpot(false);
         }
     }
     public static void undoMove(Board board, Move move){
@@ -281,6 +312,12 @@ public class Game {
     }
     public boolean validateMove(Move move){
         if (move.getPieceMoved().canMove(board, move.getStart(), move.getFinish())){
+            if (move.getFinish().getPiece().isPresent() && move.getPieceMoved() instanceof King){
+                if (move.getFinish().getPiece().get() instanceof Rook){
+                    move.setCastleMove();
+                }
+            }
+
             movesList.add(move);
             applyMove(move);
             if(inCheck()){
@@ -288,17 +325,21 @@ public class Game {
                 return false;
             }
             wTurn = !wTurn;
-            if(move.getPieceMoved()  instanceof Pawn){
-                Pawn pieceMoved = (Pawn) move.getPieceMoved();
-                if (!pieceMoved.hasMoved()){
-                    pieceMoved.setEnPassant(true);
-                    if(enPassantPawn != null){
-                        enPassantPawn.setEnPassant(false);
-                    }
-                    enPassantPawn = pieceMoved;
-                }
+            if(move.getPieceMoved() instanceof SpecialPiece){
+                SpecialPiece pieceMoved = (SpecialPiece) move.getPieceMoved();
                 pieceMoved.setHasMoved(true);
-                return true;
+                if(pieceMoved  instanceof Pawn){
+                    Pawn pawnMoved = (Pawn) pieceMoved;
+                    if (!pawnMoved.hasMoved()){
+                        pawnMoved.setEnPassant(true);
+                        if(enPassantPawn != null){
+                            enPassantPawn.setEnPassant(false);
+                        }
+                        enPassantPawn = pawnMoved;
+                    }
+                    pawnMoved.setHasMoved(true);
+                    return true;
+                }
             }
             if(enPassantPawn != null){
                 enPassantPawn.setEnPassant(false);

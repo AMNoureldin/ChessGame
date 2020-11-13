@@ -1,7 +1,9 @@
 package sample;
 
 import game.*;
+import game.piece.King;
 import game.piece.Piece;
+import game.piece.Rook;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -164,8 +166,16 @@ public class Controller {
                 if (!cur.getPiece().isPresent()){
                     pane.setOnMouseClicked(selectSpot);
                 }
-                else if (cur.getPiece().get().isWhite() != isWhite){
-                    pane.setOnMouseClicked(selectSpot);
+                else{
+                    Piece piece = cur.getPiece().get();
+                    if (piece.isWhite() != isWhite){
+                        pane.setOnMouseClicked(selectSpot);
+                    }
+                    else if(selected != null) {
+                        if (selected.getPiece() instanceof King && piece instanceof Rook){
+                            //pane.setOnMouseClicked(selectSpot);
+                        }
+                    }
                 }
             }
         }
@@ -244,10 +254,27 @@ public class Controller {
             }
         }
     }*/
+    private void pushCastleMove(MouseEvent event){
+        //deactivateTiles();
+        deactivatePieces();
+        Pane startPane = (Pane) selected.getParent();
+        Pane endPane = (Pane) ((PieceCanvas) event.getSource()).getParent();
+        Spot start = aGame.getGameBoard().getSpot(GridPane.getColumnIndex(startPane),GridPane.getRowIndex(startPane));
+        Spot end = aGame.getGameBoard().getSpot(GridPane.getColumnIndex(endPane),GridPane.getRowIndex(endPane));
+        Move move = new Move(start, end, true);
+        pushMove(move);
+        event.consume();
+    }
     private EventHandler selectPiece = new EventHandler<MouseEvent>(){
 
         public void handle(MouseEvent event){
             if(selected != null) {
+                Piece piece = ((PieceCanvas)event.getSource()).getPiece();
+                if(selected.getPiece() instanceof King && piece instanceof Rook){
+                    pushCastleMove(event);
+                    selected = null;
+                    return;
+                }
                 Pane pane = (Pane) selected.getParent();
                 pane.setBorder(null);
             }
