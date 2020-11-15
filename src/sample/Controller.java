@@ -303,8 +303,9 @@ public class Controller {
             Spot start = aGame.getGameBoard().getSpot(x0, y0);
             Spot end = aGame.getGameBoard().getSpot(x1, y1);
             Move move = new Move(start, end, false);
-            pushMove(move);
             selected = null;
+            pushMove(move);
+
         }
     };
     private Node getNodeFromGridPane(GridPane gridPane, int col, int row) {

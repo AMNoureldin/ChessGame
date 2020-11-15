@@ -51,11 +51,11 @@ public class Game {
                 board.setSpot(i, 0, new Rook(true));
                 board.setSpot(i, 7, new Rook(false));
             }
-            else if (i == 1 || i == 5){
+            else if (i == 1 || i == 6){
                 board.setSpot(i, 0, new Knight(true));
                 board.setSpot(i, 7, new Knight(false));
             }
-            else if (i == 2 || i == 6){
+            else if (i == 2 || i == 5){
                 board.setSpot(i, 0, new Bishop(true));
                 board.setSpot(i, 7, new Bishop(false));
             }
@@ -203,11 +203,7 @@ public class Game {
             kills.put(killed, active.get(killed));
             //active.remove(killed);
         }
-        if (pieceMoved instanceof King && !move.isCastleMove()){
-            if (pieceMoved.isWhite()) wKingPos = move.getFinish();
-            else bKingPos = move.getFinish();
-        }
-        else if (move.isCastleMove()){
+        if (pieceMoved instanceof King){
             if (pieceMoved.isWhite()) wKingPos = board.getKingSpot(true);
             else bKingPos = board.getKingSpot(false);
         }

@@ -88,7 +88,7 @@ public abstract class Piece {
     public boolean canMove(Board board, Spot start, Spot end){
         if (start == end) return false;
         if (end.getPiece().isPresent()){
-            //if (end.getPiece().get().isWhite() == isWhite()) return false;
+            if (end.getPiece().get().isWhite() == isWhite()) return false;
         }
         return true;
     }

@@ -16,18 +16,22 @@ public class King extends SpecialPiece {
 
     @Override
     public boolean canMove(Board board, Spot start, Spot end){
-        if (!super.canMove(board,start,end)) return false;
+        if (start == end) return false;
         int endX = end.getX();
         int x = Math.abs(start.getX() - endX);
         int endY = end.getY();
         int y = Math.abs(start.getY() - endY);
-        int distance = x^2 + y^2;
+        double distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         if ((x == 4 || x == 3) && y == 0){
             if (end.getPiece().isPresent()){
                 return canCastle(board, start, end);
             }
         }
-        else if (distance > 1) return false;
+        else if (distance > 1 && !(x == 1 && y ==1)) return false;
+        else if (end.getPiece().isPresent()){
+            if (end.getPiece().get().isWhite() == isWhite()) return false;
+        }
+        // Checking if opponent king will be adjacent to this one.
         for(int i = -1; i < 2; i++){
             for (int j = -1; j<2; j++){
                 Spot nextSpot = board.getSpot(endX + i, endY + j);
