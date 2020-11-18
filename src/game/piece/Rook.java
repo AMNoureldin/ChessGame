@@ -3,16 +3,14 @@ package game.piece;
 import game.Board;
 import game.Spot;
 
-public class Rook extends Piece {
+public class Rook extends SpecialPiece {
 
-    private boolean hasMoved;
     private final static String wURL = "file:misc/Chess_rlt60.png";
     private final static String bURL = "file:misc/Chess_rdt60.png";
     private final static int SCORE = 5;
 
     public Rook(boolean isWhite) {
         super(isWhite, SCORE);
-        hasMoved = false;
     }
 
     @Override

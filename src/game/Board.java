@@ -77,4 +77,20 @@ public class Board {
         }
         return newBoard;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Board)) return false;
+        Board board = (Board) o;
+        for(int i=0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                Spot ownSpot = board.boxes[i][j], curSpot = boxes[i][j];
+                if (ownSpot.getPiece().isPresent() && curSpot.getPiece().isPresent()) {
+                    if (ownSpot.getPiece().get() != curSpot.getPiece().get()) return false;
+                }
+                else if (ownSpot.getPiece().isPresent() || curSpot.getPiece().isPresent()) return false;
+            }
+        }
+        return true;
+    }
 }

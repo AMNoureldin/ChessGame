@@ -23,8 +23,8 @@ public class Game {
     private boolean wTurn;
     private Spot wKingPos, bKingPos;
     private LinkedList<Move> movesList;
-    //TODO Test all pieces for correct movement
-    //TODO Run full game then declare winner.
+    private Pawn enPassantPawn;
+
     public Game(Player wPlayer, Player bPlayer, GridPane boardPane) {
         this.wPlayer = wPlayer;
         this.bPlayer = bPlayer;
@@ -50,11 +50,11 @@ public class Game {
                 board.setSpot(i, 0, new Rook(true));
                 board.setSpot(i, 7, new Rook(false));
             }
-            else if (i == 1 || i == 5){
+            else if (i == 1 || i == 6){
                 board.setSpot(i, 0, new Knight(true));
                 board.setSpot(i, 7, new Knight(false));
             }
-            else if (i == 2 || i == 6){
+            else if (i == 2 || i == 5){
                 board.setSpot(i, 0, new Bishop(true));
                 board.setSpot(i, 7, new Bishop(false));
             }
@@ -74,12 +74,21 @@ public class Game {
     public Status checkStatus(){
         //TODO Implement resignation and draw
         if (inCheck()) {
+            if (wTurn) ((King)wKingPos.getPiece().get()).setInCheck(true);
+            else {
+                ((King)bKingPos.getPiece().get()).setInCheck(true);
+            }
             if(noLegalMoves()) return Status.CHECKMATE;
             return Status.ONGOING;
         }
         else{
             if(noLegalMoves()) return Status.STALEMATE;
+            if (wTurn) ((King)wKingPos.getPiece().get()).setInCheck(false);
+            else {
+                ((King)bKingPos.getPiece().get()).setInCheck(false);
+            }
         }
+
         return Status.ONGOING;
     }
 
@@ -153,15 +162,46 @@ public class Game {
         Spot finish = move.getFinish();
         Piece pieceMoved = move.getPieceMoved();
         start.setPiece(null);
+        if (move.isCastleMove()){
+            applyCastleMove(board, move);
+            return;
+        }
         if(finish.getPiece().isPresent()){
             Piece killed = finish.getPiece().get();
             move.setPieceKilled(killed);
         }
         board.setSpot(finish.getX(), finish.getY(), pieceMoved);
     }
+    private static void applyPromotion(Board board, Move move){
+        assert move.isPromotion();
+        Piece promotedTo = move.getPromotedTo();
+        move.getStart().setPiece(null);
+        board.setSpot(move.getFinish().getX(), move.getFinish().getY(), promotedTo);
+    }
+    private static void applyCastleMove(Board board, Move move){
+        assert move.getFinish().getPiece().isPresent();
+        //Spot start = move.getStart();
+        Spot end = move.getFinish();
+        if (end.getX() == 0){
+            board.setSpot(1, end.getY(), move.getPieceMoved());
+            board.setSpot(2, end.getY(), end.getPiece().get());
+        }
+        else if (end.getX() == 7){
+            board.setSpot(5, end.getY(), move.getPieceMoved());
+            board.setSpot(4, end.getY(), end.getPiece().get());
+        }
+        end.setPiece(null);
+    }
     private void applyMove(Move move){
         Piece pieceMoved = move.getPieceMoved();
-        applyMove(this.board, move);
+        if (move.isPromotion()){
+            applyPromotion(this.board, move);
+            PieceCanvas newPiece = new PieceCanvas(10, 10, move.getPromotedTo());
+            active.put(move.getPromotedTo(), newPiece);
+            if(wTurn) wScore = wScore + move.getPromotedTo().getScore() - 1;
+            else bScore = bScore + move.getPromotedTo().getScore() - 1;
+        }
+        else applyMove(this.board, move);
         if(move.getPieceKilled() != null){
             Piece killed = move.getPieceKilled();
             if (wTurn) {
@@ -176,8 +216,8 @@ public class Game {
             //active.remove(killed);
         }
         if (pieceMoved instanceof King){
-            if (pieceMoved.isWhite()) wKingPos = move.getFinish();
-            else bKingPos = move.getFinish();
+            if (pieceMoved.isWhite()) wKingPos = board.getKingSpot(true);
+            else bKingPos = board.getKingSpot(false);
         }
     }
     public static void undoMove(Board board, Move move){
@@ -194,15 +234,26 @@ public class Game {
         }
         //return board;
     }
-    private void undoMove(){
+    private void undoMove(){ //TODO Check undoing a castling and promotion
         Move lastMove = movesList.removeLast();
         Piece pieceKilled = lastMove.getPieceKilled();
         undoMove(this.board, lastMove);
         if (pieceKilled != null){
             //active.put(pieceKilled, kills.get(pieceKilled));
             kills.remove(pieceKilled);
+            if (wTurn) {
+                wKills.remove(pieceKilled);
+                bScore = bScore + pieceKilled.getScore();
+            }
+            else {
+                bKills.remove(pieceKilled);
+                wScore = wScore + pieceKilled.getScore();
+            }
         }
-
+        if (lastMove.getPieceMoved() instanceof King){
+            if (lastMove.getPieceMoved().isWhite()) wKingPos = board.getKingSpot(true);
+            else bKingPos = board.getKingSpot(false);
+        }
 
     }
     private void drawBoard(){
@@ -262,6 +313,17 @@ public class Game {
         if (!active.containsKey(piece)) return null;
         return active.get(piece);
     }
+    public ArrayList<Piece> getCurrentPlayerPieces(){
+        ArrayList<Piece> allPieces = new ArrayList<>(active.keySet());
+        ArrayList<Piece> curPieces = new ArrayList<>();
+        for(Piece piece : allPieces){
+            if (piece.isWhite() == wTurn){
+                curPieces.add(piece);
+            }
+        }
+        return curPieces;
+    }
+
 
     public ArrayList<Piece> getwKills() {
         return wKills;
@@ -280,6 +342,12 @@ public class Game {
     }
     public boolean validateMove(Move move){
         if (move.getPieceMoved().canMove(board, move.getStart(), move.getFinish())){
+            if (move.getFinish().getPiece().isPresent() && move.getPieceMoved() instanceof King){
+                if (move.getFinish().getPiece().get() instanceof Rook){
+                    move.setCastleMove();
+                }
+            }
+
             movesList.add(move);
             applyMove(move);
             if(inCheck()){
@@ -287,8 +355,25 @@ public class Game {
                 return false;
             }
             wTurn = !wTurn;
-            if(move.getPieceMoved()  instanceof Pawn){
-                ((Pawn) move.getPieceMoved()).setHasMoved(true);
+            if(move.getPieceMoved() instanceof SpecialPiece){
+                SpecialPiece pieceMoved = (SpecialPiece) move.getPieceMoved();
+                pieceMoved.setHasMoved(true);
+                if(pieceMoved  instanceof Pawn){
+                    Pawn pawnMoved = (Pawn) pieceMoved;
+                    if (!pawnMoved.hasMoved()){
+                        pawnMoved.setEnPassant(true);
+                        if(enPassantPawn != null){
+                            enPassantPawn.setEnPassant(false);
+                        }
+                        enPassantPawn = pawnMoved;
+                    }
+                    pawnMoved.setHasMoved(true);
+                    return true;
+                }
+            }
+            if(enPassantPawn != null){
+                enPassantPawn.setEnPassant(false);
+                enPassantPawn = null;
             }
             //gameStatus = checkStatus();
             return true;

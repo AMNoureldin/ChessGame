@@ -1,11 +1,16 @@
 package sample;
 
 import game.*;
-import game.piece.Piece;
+import game.piece.*;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
@@ -13,6 +18,8 @@ import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -34,10 +41,14 @@ public class Controller {
     private PieceCanvas selected;
     private Game aGame;
     private Move nextMove;
+    private Piece promotionPiece;
     private boolean isFlipped;
     private boolean p1White = true;
 
 
+    //TODO Design and implement main menu
+    //TODO Find a way to display killed pieces on display
+    //TODO Change game start resolution and make the board scale correctly
 
     //TODO Add game timing functionality
     //TODO Make assignment of white and black random
@@ -114,18 +125,24 @@ public class Controller {
 
         }
         else{
+            if (move.isPromotion()){
+                PieceCanvas promotedTo = aGame.getCanvas(move.getPromotedTo());
+                Pane gridSpot = (Pane) getNodeFromGridPane(boardPane, move.getFinish().getX(), move.getFinish().getY());
+                promotedTo.widthProperty().bind(gridSpot.widthProperty());
+                promotedTo.heightProperty().bind(gridSpot.heightProperty());
+            }
             startTurn();
         }
 
     }
     private void activatePieces(){
-        ArrayList<Piece> pieces = aGame.getCurrentPlayer().getPieces();
+        ArrayList<Piece> pieces = aGame.getCurrentPlayerPieces();
         for (Piece piece : pieces){
             aGame.getCanvas(piece).setOnMouseClicked(selectPiece);
         }
     }
     private void deactivatePieces(){
-        ArrayList<Piece> pieces = aGame.getCurrentPlayer().getPieces();
+        ArrayList<Piece> pieces = aGame.getCurrentPlayerPieces();
         for (Piece piece : pieces){
             aGame.getCanvas(piece).setOnMouseClicked(null);
         }
@@ -149,8 +166,16 @@ public class Controller {
                 if (!cur.getPiece().isPresent()){
                     pane.setOnMouseClicked(selectSpot);
                 }
-                else if (cur.getPiece().get().isWhite() != isWhite){
-                    pane.setOnMouseClicked(selectSpot);
+                else{
+                    Piece piece = cur.getPiece().get();
+                    if (piece.isWhite() != isWhite){
+                        pane.setOnMouseClicked(selectSpot);
+                    }
+                    else if(selected != null) {
+                        if (selected.getPiece() instanceof King && piece instanceof Rook){
+                            //pane.setOnMouseClicked(selectSpot);
+                        }
+                    }
                 }
             }
         }
@@ -204,10 +229,88 @@ public class Controller {
 
     }
 
+
+    private void pushCastleMove(MouseEvent event){
+        //deactivateTiles();
+        deactivatePieces();
+        Pane startPane = (Pane) selected.getParent();
+        Pane endPane = (Pane) ((PieceCanvas) event.getSource()).getParent();
+        Spot start = aGame.getGameBoard().getSpot(GridPane.getColumnIndex(startPane),GridPane.getRowIndex(startPane));
+        Spot end = aGame.getGameBoard().getSpot(GridPane.getColumnIndex(endPane),GridPane.getRowIndex(endPane));
+        Move move = new Move(start, end, true);
+        pushMove(move);
+        event.consume();
+    }
+    private boolean isPromotion(Move move){
+        Spot start = move.getStart();
+        Spot end = move.getFinish();
+        if (!start.getPiece().isPresent()) return false;
+        Piece piece = start.getPiece().get();
+        if (piece instanceof Pawn){
+            if (piece.isWhite() && end.getY() == 7) return true;
+            else if(!piece.isWhite() && end.getY() == 0) return true;
+        }
+        return false;
+    }
+    private Piece getPromotion(MouseEvent mouseEvent) throws Exception{
+        FXMLLoader fxmlLoader = new FXMLLoader(this.getClass().getResource("promotion.fxml"));
+        Parent root = fxmlLoader.load();
+        Scene mainScene = new Scene(root);
+        Stage stage = new Stage();
+        Pane target = (Pane) mouseEvent.getSource();
+        Bounds bounds = target.localToScreen(target.getBoundsInLocal());
+        stage.initStyle(StageStyle.UNDECORATED);
+        stage.setX(bounds.getMaxX());
+        stage.setY(bounds.getMaxY());
+        stage.setHeight(bounds.getHeight() * 2);
+        stage.setWidth(bounds.getWidth() * 2);
+        stage.setScene(mainScene);
+        GridPane grid = (GridPane) root;
+        drawPromotionGrid(grid);
+        stage.showAndWait();
+        return promotionPiece;
+    }
+    private void drawPromotionGrid(GridPane grid){
+        for(int i=0; i < 2; i++){
+            for(int j=0; j <2; j++){
+                PieceCanvas piece ;
+                Pane pane = (Pane) getNodeFromGridPane(grid, i, j);
+                if (i == 0){
+                    if (j == 0) piece = new PieceCanvas(pane.getWidth(), pane.getHeight(), new Queen(aGame.getCurrentPlayer().isWhite()));
+                    else piece = new PieceCanvas(pane.getWidth(), pane.getHeight(), new Rook(aGame.getCurrentPlayer().isWhite()));
+                }
+                else{
+                    if (j == 0) piece = new PieceCanvas(pane.getWidth(), pane.getHeight(), new Bishop(aGame.getCurrentPlayer().isWhite()));
+                    else piece = new PieceCanvas(pane.getWidth(), pane.getHeight(), new Knight(aGame.getCurrentPlayer().isWhite()));
+                }
+                piece.heightProperty().bind(pane.heightProperty());
+                piece.widthProperty().bind(pane.widthProperty());
+                piece.draw();
+                piece.setOnMouseClicked(selectPromotion);
+                pane.getChildren().add(piece);
+            }
+        }
+
+    }
+    private EventHandler<MouseEvent> selectPromotion = new EventHandler<MouseEvent>() {
+        @Override
+        public void handle(MouseEvent event) {
+            PieceCanvas canvas = (PieceCanvas) event.getSource();
+            promotionPiece = canvas.getPiece();
+            canvas.getParent().getScene().getWindow().hide();
+            event.consume();
+        }
+    };
     private EventHandler selectPiece = new EventHandler<MouseEvent>(){
 
         public void handle(MouseEvent event){
             if(selected != null) {
+                Piece piece = ((PieceCanvas)event.getSource()).getPiece();
+                if(selected.getPiece() instanceof King && piece instanceof Rook){
+                    pushCastleMove(event);
+                    selected = null;
+                    return;
+                }
                 Pane pane = (Pane) selected.getParent();
                 pane.setBorder(null);
             }
@@ -242,8 +345,18 @@ public class Controller {
             Spot start = isFlipped ? gameBoard.getSpot(x0, y0) : gameBoard.getSpot(x0, 7 - y0);
             Spot end = isFlipped ? gameBoard.getSpot(x1, y1) : gameBoard.getSpot(x1, 7 - y1);
             Move move = new Move(start, end, false);
-            pushMove(move);
+            if(isPromotion(move)){
+                try{
+                    Piece promotion = getPromotion(mouseEvent);
+                    move.setPromotion(promotion);
+                }
+                catch (Exception  e){
+                    e.printStackTrace();
+                }
+            }
             selected = null;
+            pushMove(move);
+
         }
     };
     private Node getNodeFromGridPane(GridPane gridPane, int col, int row) {

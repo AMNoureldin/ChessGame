@@ -3,9 +3,9 @@ package game.piece;
 import game.Board;
 import game.Spot;
 
-public class Pawn extends Piece {
+public class Pawn extends SpecialPiece {
 
-    private boolean hasMoved;
+    //private boolean hasMoved;
     private boolean enPassant;
     private final static String wURL = "file:misc/Chess_plt60.png";
     private final static String bURL = "file:misc/Chess_pdt60.png";
@@ -15,12 +15,14 @@ public class Pawn extends Piece {
 
     public Pawn(boolean isWhite) {
         super(isWhite, SCORE);
-        hasMoved = false;
+        //hasMoved = false;
         enPassant = false;
     }
-    public void setHasMoved(boolean hasMoved) {
-        this.hasMoved = hasMoved;
+
+    public void setEnPassant(boolean enPassant) {
+        this.enPassant = enPassant;
     }
+
     @Override
     public boolean canMove(Board board, Spot start, Spot end) {
         if (!super.canMove(board,start,end)) return false;
@@ -31,7 +33,7 @@ public class Pawn extends Piece {
 
         if (x==0) {
             if(end.getPiece().isPresent()) return false;
-            if(y == 2 && !hasMoved) {
+            if(y == 2 && !hasMoved()) {
                 boolean clear = clearWay(board, start, end);
                 //hasMoved = clear;
                 return clear;
