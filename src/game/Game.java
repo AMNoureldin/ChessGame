@@ -24,8 +24,7 @@ public class Game {
     private Spot wKingPos, bKingPos;
     private LinkedList<Move> movesList;
     private Pawn enPassantPawn;
-    //TODO Test all pieces for correct movement
-    //TODO Run full game then declare winner.
+
     public Game(Player wPlayer, Player bPlayer, GridPane boardPane) {
         this.wPlayer = wPlayer;
         this.bPlayer = bPlayer;
@@ -165,13 +164,19 @@ public class Game {
         start.setPiece(null);
         if (move.isCastleMove()){
             applyCastleMove(board, move);
-            return; //TODO apply castling
+            return;
         }
         if(finish.getPiece().isPresent()){
             Piece killed = finish.getPiece().get();
             move.setPieceKilled(killed);
         }
         board.setSpot(finish.getX(), finish.getY(), pieceMoved);
+    }
+    private static void applyPromotion(Board board, Move move){
+        assert move.isPromotion();
+        Piece promotedTo = move.getPromotedTo();
+        move.getStart().setPiece(null);
+        board.setSpot(move.getFinish().getX(), move.getFinish().getY(), promotedTo);
     }
     private static void applyCastleMove(Board board, Move move){
         assert move.getFinish().getPiece().isPresent();
@@ -189,7 +194,14 @@ public class Game {
     }
     private void applyMove(Move move){
         Piece pieceMoved = move.getPieceMoved();
-        applyMove(this.board, move);
+        if (move.isPromotion()){
+            applyPromotion(this.board, move);
+            PieceCanvas newPiece = new PieceCanvas(10, 10, move.getPromotedTo());
+            active.put(move.getPromotedTo(), newPiece);
+            if(wTurn) wScore = wScore + move.getPromotedTo().getScore() - 1;
+            else bScore = bScore + move.getPromotedTo().getScore() - 1;
+        }
+        else applyMove(this.board, move);
         if(move.getPieceKilled() != null){
             Piece killed = move.getPieceKilled();
             if (wTurn) {
@@ -222,13 +234,21 @@ public class Game {
         }
         //return board;
     }
-    private void undoMove(){
+    private void undoMove(){ //TODO Check undoing a castling and promotion
         Move lastMove = movesList.removeLast();
         Piece pieceKilled = lastMove.getPieceKilled();
         undoMove(this.board, lastMove);
         if (pieceKilled != null){
             //active.put(pieceKilled, kills.get(pieceKilled));
             kills.remove(pieceKilled);
+            if (wTurn) {
+                wKills.remove(pieceKilled);
+                bScore = bScore + pieceKilled.getScore();
+            }
+            else {
+                bKills.remove(pieceKilled);
+                wScore = wScore + pieceKilled.getScore();
+            }
         }
 
 
@@ -290,6 +310,17 @@ public class Game {
         if (!active.containsKey(piece)) return null;
         return active.get(piece);
     }
+    public ArrayList<Piece> getCurrentPlayerPieces(){
+        ArrayList<Piece> allPieces = new ArrayList<>(active.keySet());
+        ArrayList<Piece> curPieces = new ArrayList<>();
+        for(Piece piece : allPieces){
+            if (piece.isWhite() == wTurn){
+                curPieces.add(piece);
+            }
+        }
+        return curPieces;
+    }
+
 
     public ArrayList<Piece> getwKills() {
         return wKills;

@@ -9,13 +9,9 @@ import javafx.scene.image.Image;
 public class PieceCanvas extends Canvas {
     private Image aImg;
     private Piece aPiece;
-    /*ResizableCanvas() {
-        // Redraw canvas when size changes.
-        widthProperty().addListener(evt -> draw());
-        heightProperty().addListener(evt -> draw());
-    }*/
 
-    PieceCanvas(double x, double y, Piece pPiece){
+
+    public PieceCanvas(double x, double y, Piece pPiece){
         super(x, y);
         widthProperty().addListener(evt -> draw());
         heightProperty().addListener(evt -> draw());
@@ -23,7 +19,7 @@ public class PieceCanvas extends Canvas {
         aImg = new Image(aPiece.getIconURL());
     }
 
-     void draw() {
+     public void draw() {
         double width = getWidth();
         double height = getHeight();
         GraphicsContext gc = getGraphicsContext2D();

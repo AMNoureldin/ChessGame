@@ -8,7 +8,9 @@ public class Move {
     private Spot start, finish;
     private Piece pieceMoved;
     private Piece pieceKilled;
+    private Piece promotedTo;
     private boolean isCastleMove;
+    private boolean isPromotion;
 
 
 
@@ -43,5 +45,17 @@ public class Move {
 
     public boolean isCastleMove() {
         return isCastleMove;
+    }
+    public void setPromotion(Piece promotedTo){
+        isPromotion = true;
+        this.promotedTo = promotedTo;
+    }
+
+    public boolean isPromotion() {
+        return isPromotion;
+    }
+
+    public Piece getPromotedTo() {
+        return promotedTo;
     }
 }
