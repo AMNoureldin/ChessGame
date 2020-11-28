@@ -2,7 +2,6 @@ package sample;
 
 import game.*;
 import game.piece.*;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -161,8 +160,8 @@ public class Controller {
         for (int i=0; i < 8; i++){
             for (int j=0; j < 8; j++){
                 Spot cur = aGame.getGameBoard().getSpot(i, j);
-                Pane pane = (Pane)
-                        (isFlipped ? getNodeFromGridPane(boardPane, i, j) : getNodeFromGridPane(boardPane, i, 7-j));
+                int[] position = getTrueCoordinates(i, j);
+                Pane pane = (Pane) getNodeFromGridPane(boardPane, position[0], position[1]);
                 if (!cur.getPiece().isPresent()){
                     pane.setOnMouseClicked(selectSpot);
                 }
@@ -196,8 +195,8 @@ public class Controller {
         for (int i=0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 Spot boardSpot = board.getSpot(i, j);
-                Pane gridSpot =  isFlipped ? (Pane) getNodeFromGridPane(boardPane, i, j) :
-                        (Pane)getNodeFromGridPane(boardPane, i, 7 - j);
+                int[] position = getTrueCoordinates(i, j);
+                Pane gridSpot =  (Pane) getNodeFromGridPane(boardPane, position[0], position[1]);
                 gridSpot.getChildren().clear();
                 if (boardSpot.getPiece().isPresent()){
                     PieceCanvas canvas = aGame.getCanvas(boardSpot.getPiece().get());
@@ -228,15 +227,28 @@ public class Controller {
         }
 
     }
-
+    // Takes Gridpane coordinates and translates them to game board coordinates
+    private int[] getTrueCoordinates(int y, int x){
+        int[] newCoord = new int[2];
+        if (isFlipped) {
+            newCoord[0] = y;
+            newCoord[1] = x;
+            return newCoord;
+        }
+        newCoord[0] = 7 - y;
+        newCoord[1] = 7 - x;
+        return newCoord;
+    }
 
     private void pushCastleMove(MouseEvent event){
         //deactivateTiles();
         deactivatePieces();
         Pane startPane = (Pane) selected.getParent();
         Pane endPane = (Pane) ((PieceCanvas) event.getSource()).getParent();
-        Spot start = aGame.getGameBoard().getSpot(GridPane.getColumnIndex(startPane),GridPane.getRowIndex(startPane));
-        Spot end = aGame.getGameBoard().getSpot(GridPane.getColumnIndex(endPane),GridPane.getRowIndex(endPane));
+        int[] startPosition = getTrueCoordinates( GridPane.getColumnIndex(startPane), GridPane.getRowIndex(startPane));
+        int[] endPosition = getTrueCoordinates(GridPane.getColumnIndex(endPane), GridPane.getRowIndex(endPane));
+        Spot start = aGame.getGameBoard().getSpot(startPosition[0], startPosition[1]);
+        Spot end = aGame.getGameBoard().getSpot(endPosition[0], endPosition[1]);
         Move move = new Move(start, end, true);
         pushMove(move);
         event.consume();
@@ -342,8 +354,10 @@ public class Controller {
             int y0 = GridPane.getRowIndex(startPane);
             int x0 = GridPane.getColumnIndex(startPane);
             Board gameBoard = aGame.getGameBoard();
-            Spot start = isFlipped ? gameBoard.getSpot(x0, y0) : gameBoard.getSpot(x0, 7 - y0);
-            Spot end = isFlipped ? gameBoard.getSpot(x1, y1) : gameBoard.getSpot(x1, 7 - y1);
+            int[] sCoord = getTrueCoordinates(x0, y0);
+            int[] eCoord = getTrueCoordinates(x1, y1);
+            Spot start = gameBoard.getSpot(sCoord[0], sCoord[1]);
+            Spot end = gameBoard.getSpot(eCoord[0], eCoord[1]);
             Move move = new Move(start, end, false);
             if(isPromotion(move)){
                 try{

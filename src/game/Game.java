@@ -341,13 +341,13 @@ public class Game {
         return wTurn ? wPlayer : bPlayer;
     }
     public boolean validateMove(Move move){
+        if (move.getPieceMoved().isWhite() != wTurn) return false;
         if (move.getPieceMoved().canMove(board, move.getStart(), move.getFinish())){
             if (move.getFinish().getPiece().isPresent() && move.getPieceMoved() instanceof King){
                 if (move.getFinish().getPiece().get() instanceof Rook){
                     move.setCastleMove();
                 }
             }
-
             movesList.add(move);
             applyMove(move);
             if(inCheck()){
