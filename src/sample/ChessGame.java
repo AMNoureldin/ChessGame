@@ -25,7 +25,7 @@ public class ChessGame extends Application {
         menuController.setGameController(gameLoader.getController());
         primaryStage.setScene(mainScene);
         primaryStage.show();
-        menuController.drawLogo();
+        //menuController.drawLogo();
     }
 
     public static void main(String[] args) {

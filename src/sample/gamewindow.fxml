@@ -36,7 +36,7 @@
           </Menu>
         </menus>
       </MenuBar>
-      <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="688.0" prefWidth="755.0">
+      <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="688.0" prefWidth="755.0" styleClass="bodybg" stylesheets="@background.css" VBox.vgrow="ALWAYS">
          <children>
             <BorderPane layoutX="28.0" prefHeight="512.0" prefWidth="534.0" AnchorPane.bottomAnchor="50.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                <center>
@@ -186,12 +186,12 @@
                                  <children>
                                     <Label fx:id="p1Name" text="Player 1">
                                        <font>
-                                          <Font size="17.0" />
+                                          <Font name="Arial Black" size="16.0" />
                                        </font>
                                     </Label>
                                     <Label fx:id="p1Score" text="0" GridPane.rowIndex="1">
                                        <font>
-                                          <Font size="14.0" />
+                                          <Font name="Arial Black" size="14.0" />
                                        </font>
                                     </Label>
                                  </children>
@@ -218,12 +218,12 @@
                                  <children>
                                     <Label fx:id="p2Name" text="Player 2" GridPane.halignment="RIGHT" GridPane.valignment="CENTER">
                                        <font>
-                                          <Font size="17.0" />
+                                          <Font name="Arial Black" size="16.0" />
                                        </font>
                                     </Label>
                                     <Label fx:id="p2Score" text="0" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="CENTER">
                                        <font>
-                                          <Font size="14.0" />
+                                          <Font name="Arial Black" size="14.0" />
                                        </font>
                                     </Label>
                                  </children>

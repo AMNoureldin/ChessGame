@@ -1,0 +1,4 @@
+.bodybg{
+    -fx-background-image: url('file:misc/background2.jpg');
+    -fx-background-size: cover;
+}
