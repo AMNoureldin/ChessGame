@@ -84,8 +84,10 @@ public class Controller {
         gc = bCanvas.getGraphicsContext2D();
         gc.clearRect(0, 0, bCanvas.getWidth(), bCanvas.getHeight());
         gc.drawImage(bImage, 0, 0, bCanvas.getWidth(), bCanvas.getHeight());
-        player1Logo.getChildren().add(wCanvas);
-        player2Logo.getChildren().add(bCanvas);
+        Pane wPane = p1White ? player1Logo : player2Logo;
+        Pane bPane = p1White ? player2Logo : player1Logo;
+        wPane.getChildren().add(wCanvas);
+        bPane.getChildren().add(bCanvas);
     }
     private void startTurn(){
         drawBoard();
@@ -99,6 +101,18 @@ public class Controller {
                 startTurn();
             }
             else{
+                GridPane p1Info = (GridPane) player1Logo.getParent();
+                GridPane p2Info = (GridPane) player2Logo.getParent();
+                if(currentPlayer.isWhite() == p1White){
+                    p1Info.setBorder(new Border(new BorderStroke(Color.DARKRED,
+                            BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(2))));
+                    p2Info.setBorder(null);
+                }
+                else{
+                    p2Info.setBorder(new Border(new BorderStroke(Color.DARKRED,
+                            BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(2))));
+                    p1Info.setBorder(null);
+                }
                 activatePieces();
             }
         }
@@ -329,7 +343,7 @@ public class Controller {
             PieceCanvas canvas = (PieceCanvas) event.getSource();
             Pane pane = (Pane) canvas.getParent();
             pane.setBorder(new Border(new BorderStroke(Color.DARKRED,
-                    BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
+                    BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(2))));
             selected = canvas;
             activateTiles();
             event.consume();
@@ -368,6 +382,8 @@ public class Controller {
                     e.printStackTrace();
                 }
             }
+            Pane pane = (Pane) selected.getParent();
+            pane.setBorder(null);
             selected = null;
             pushMove(move);
 
