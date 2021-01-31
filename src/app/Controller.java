@@ -1,4 +1,4 @@
-package sample;
+package app;
 
 import game.*;
 import game.piece.*;
@@ -21,6 +21,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.*;
 
@@ -43,32 +44,36 @@ public class Controller {
     private Piece promotionPiece;
     private boolean isFlipped;
     private boolean p1White = true;
-
-
-    //TODO Design and implement main menu
-    //TODO Find a way to display killed pieces on display
-    //TODO Change game start resolution and make the board scale correctly
+    private HashMap<Piece, PieceCanvas> pieceCanvases;
 
     //TODO Add game timing functionality
-    //TODO Make assignment of white and black random
 
-
+    // Intialize game controller with player names.
     public void setupGame(String p1Name, String p2Name){
         this.p1Name.setText(p1Name);
         this.p2Name.setText(p2Name);
         Random rand = new Random();
         isFlipped = false;
         p1White = rand.nextInt() % 2 == 0;
+        pieceCanvases = new HashMap<>();
     }
+    // Event handler that starts the game.
     @FXML
     private void startGame() throws ExecutionException, InterruptedException {
         aGame = new Game(new HumanPlayer(true, boardPane), new HumanPlayer(false, boardPane), boardPane);
         Status status = aGame.checkStatus();
-        drawBoard();
+        drawInitialBoard();
         Player currentPlayer = aGame.getCurrentPlayer();
         drawPlayerLogos();
         startTurn();
     }
+    @FXML
+    private void flipBoard(){
+        isFlipped = !isFlipped;
+        startTurn();
+    }
+
+    // Initialize game interface with logos for the colors of each player.
     private void drawPlayerLogos(){
         Canvas wCanvas = new Canvas(player1Logo.getWidth(), player1Logo.getHeight());
         wCanvas.heightProperty().bind(player1Logo.heightProperty());
@@ -89,6 +94,35 @@ public class Controller {
         wPane.getChildren().add(wCanvas);
         bPane.getChildren().add(bCanvas);
     }
+    // Initializes and draws the canvases representing the pieces.
+    private void drawInitialBoard(){
+        Board board = aGame.getGameBoard();
+        //ArrayList<PieceCanvas> wPieces = new ArrayList<>();
+        //ArrayList<PieceCanvas> bPieces = new ArrayList<>();
+        for (int i=0; i < 8; i++){
+            for(int j=0; j<8; j++){
+                Spot boardSpot = board.getSpot(i, j);
+                Pane gridSpot = (Pane) getNodeFromGridPane(boardPane, i, j);
+                if (boardSpot.getPiece().isPresent()) {
+                    double x = gridSpot.getWidth();
+                    double y = gridSpot.getHeight();
+                    Piece curPiece = boardSpot.getPiece().get();
+                    PieceCanvas canvas = new PieceCanvas(x, y, curPiece);
+                    canvas.widthProperty().bind(gridSpot.widthProperty());
+                    canvas.heightProperty().bind(gridSpot.heightProperty());
+                    canvas.draw();
+                    gridSpot.getChildren().add(canvas);
+                    pieceCanvases.put(curPiece, canvas);
+                    //if (curPiece.isWhite()) wPieces.add(canvas);
+                    //else bPieces.add(canvas);
+                }
+                //pane.setOnMouseClicked(selectSpot);
+            }
+        }
+        //wPlayer.setPieces(wPieces);
+        //bPlayer.setPieces(bPieces);
+    }
+    // Main handler for the game controller
     private void startTurn(){
         drawBoard();
         Status status = aGame.checkStatus();
@@ -118,6 +152,7 @@ public class Controller {
         }
 
     }
+    // Updates score displays.
     private void updateScore(){
         int wScore =  aGame.getScore(true);
         int bScore = aGame.getScore(false);
@@ -130,16 +165,17 @@ public class Controller {
             p2Score.setText(Integer.toString(0));
         }
     }
+    // Communicates selected move to game model
     private void pushMove(Move move){
         boolean valid = aGame.validateMove(move);
-        if (!valid){
+        if (!valid){ // If move is not valid allow the player to select a new move
             deactivateTiles();
             activatePieces();
-
         }
-        else{
-            if (move.isPromotion()){
-                PieceCanvas promotedTo = aGame.getCanvas(move.getPromotedTo());
+        else{ // else we advance the turn
+            if (move.isPromotion()){ // if Move is a promotion we create and add the canvas of the new piece to the active set
+                PieceCanvas promotedTo = new PieceCanvas(10, 10, move.getPromotedTo());
+                pieceCanvases.put(move.getPromotedTo(), promotedTo);
                 Pane gridSpot = (Pane) getNodeFromGridPane(boardPane, move.getFinish().getX(), move.getFinish().getY());
                 promotedTo.widthProperty().bind(gridSpot.widthProperty());
                 promotedTo.heightProperty().bind(gridSpot.heightProperty());
@@ -148,18 +184,21 @@ public class Controller {
         }
 
     }
+    // Activate pieces of current player for selection for a move.
     private void activatePieces(){
         ArrayList<Piece> pieces = aGame.getCurrentPlayerPieces();
         for (Piece piece : pieces){
-            aGame.getCanvas(piece).setOnMouseClicked(selectPiece);
+            pieceCanvases.get(piece).setOnMouseClicked(selectPiece);
         }
     }
+    // Deactivates the pieces of current player so they cannot be selected.
     private void deactivatePieces(){
         ArrayList<Piece> pieces = aGame.getCurrentPlayerPieces();
         for (Piece piece : pieces){
-            aGame.getCanvas(piece).setOnMouseClicked(null);
+            pieceCanvases.get(piece).setOnMouseClicked(null);
         }
     }
+    // Deactivates board tiles and opponents so they cannot be selected.
     private void deactivateTiles(){
         for (int i=0; i < 8; i++){
             for (int j=0; j < 8; j++){
@@ -168,7 +207,7 @@ public class Controller {
             }
         }
     }
-
+    // Activate empty tiles and the pieces of opponent player for selection for a move.
     private void activateTiles(){
         boolean isWhite = aGame.getCurrentPlayer().isWhite();
         for (int i=0; i < 8; i++){
@@ -193,19 +232,12 @@ public class Controller {
             }
         }
     }
-    private void endGame(){
-
-    }
-    private void runGame(){
-        Status status = aGame.checkStatus();
-        if (status != Status.ONGOING) endGame();
-        drawBoard();
-        Player currentPlayer = aGame.getCurrentPlayer();
 
 
-    }
+    // Draws active pieces to the board and killed pieces to the sides of the board.
     private void drawBoard(){
         Board board = aGame.getGameBoard();
+        // Drawing the game board
         for (int i=0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 Spot boardSpot = board.getSpot(i, j);
@@ -213,18 +245,19 @@ public class Controller {
                 Pane gridSpot =  (Pane) getNodeFromGridPane(boardPane, position[0], position[1]);
                 gridSpot.getChildren().clear();
                 if (boardSpot.getPiece().isPresent()){
-                    PieceCanvas canvas = aGame.getCanvas(boardSpot.getPiece().get());
+                    PieceCanvas canvas = pieceCanvases.get(boardSpot.getPiece().get());
                     gridSpot.getChildren().add(canvas);;
                 }
                 gridSpot.setBorder(null);
             }
         }
-        ArrayList<Piece> wKills = isFlipped ? aGame.getwKills() : aGame.getbKills();
-        ArrayList<Piece> bKills = isFlipped ? aGame.getbKills() : aGame.getwKills();
+        // Drawing killed pieces
+        ArrayList<Piece> wKills = aGame.getPlayerKills(isFlipped);
+        ArrayList<Piece> bKills =  aGame.getPlayerKills(!isFlipped);
         lKills.getChildren().clear();
         rKills.getChildren().clear();
         for(Piece piece : wKills){
-            PieceCanvas pieceCanvas = aGame.getCanvas(piece);
+            PieceCanvas pieceCanvas = pieceCanvases.get(piece);
             VBox piecePane = new VBox();
             piecePane.getChildren().add(pieceCanvas);
             piecePane.setAlignment(Pos.TOP_CENTER);
@@ -232,7 +265,7 @@ public class Controller {
             lKills.getChildren().add(0, piecePane);
         }
         for(Piece piece : bKills){
-            PieceCanvas pieceCanvas = aGame.getCanvas(piece);
+            PieceCanvas pieceCanvas = pieceCanvases.get(piece);
             VBox piecePane = new VBox();
             piecePane.getChildren().add(pieceCanvas);
             rKills.setAlignment(Pos.BOTTOM_CENTER);
@@ -253,7 +286,7 @@ public class Controller {
         newCoord[1] = 7 - x;
         return newCoord;
     }
-
+    // Deals with applying a castle move to the model
     private void pushCastleMove(MouseEvent event){
         //deactivateTiles();
         deactivatePieces();
@@ -267,6 +300,7 @@ public class Controller {
         pushMove(move);
         event.consume();
     }
+    // Deals with applying a promotion move to the model
     private boolean isPromotion(Move move){
         Spot start = move.getStart();
         Spot end = move.getFinish();
@@ -278,6 +312,7 @@ public class Controller {
         }
         return false;
     }
+    // Displays promotion menu then returns the selected piece.
     private Piece getPromotion(MouseEvent mouseEvent) throws Exception{
         FXMLLoader fxmlLoader = new FXMLLoader(this.getClass().getResource("promotion.fxml"));
         Parent root = fxmlLoader.load();
@@ -296,6 +331,7 @@ public class Controller {
         stage.showAndWait();
         return promotionPiece;
     }
+    // Draws the promotion menu
     private void drawPromotionGrid(GridPane grid){
         for(int i=0; i < 2; i++){
             for(int j=0; j <2; j++){
@@ -318,6 +354,7 @@ public class Controller {
         }
 
     }
+    // Event handler for promotion piece selection
     private EventHandler<MouseEvent> selectPromotion = new EventHandler<MouseEvent>() {
         @Override
         public void handle(MouseEvent event) {
@@ -327,6 +364,8 @@ public class Controller {
             event.consume();
         }
     };
+
+    // Event handler to select piece to move.
     private EventHandler selectPiece = new EventHandler<MouseEvent>(){
 
         public void handle(MouseEvent event){
@@ -351,11 +390,9 @@ public class Controller {
         }
     };
 
-    @FXML
-    private void flipBoard(){
-        isFlipped = !isFlipped;
-        startTurn();
-    }
+
+
+    // Event handler for selecting destination spot.
     private EventHandler<MouseEvent> selectSpot = new EventHandler<MouseEvent>() {
         @Override
         public void handle(MouseEvent mouseEvent) {
@@ -389,6 +426,8 @@ public class Controller {
 
         }
     };
+
+    // Extracts a specific node from gridpane coordinates.
     private Node getNodeFromGridPane(GridPane gridPane, int col, int row) {
         for (Node node : gridPane.getChildren()) {
             if (GridPane.getColumnIndex(node) == col && GridPane.getRowIndex(node) == row) {

@@ -2,29 +2,24 @@ package game;
 
 import game.piece.*;
 import game.piece.Piece;
-import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.layout.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 public class Game {
     private Player wPlayer, bPlayer;
     private Board board;
-    private ArrayList<Piece> wKills;
-    private ArrayList<Piece> bKills;
     private int wScore, bScore;
     private int moveCounter;
-    private GridPane boardPane;
-    private HashMap<Piece, PieceCanvas> active;
-    private HashMap<Piece, PieceCanvas> kills;
+    private ArrayList<Piece> active;
+    private ArrayList<Piece> kills;
     private boolean wTurn;
     private Spot wKingPos, bKingPos;
     private LinkedList<Move> movesList;
     private Pawn enPassantPawn;
-
+    // Game model constructor
     public Game(Player wPlayer, Player bPlayer, GridPane boardPane) {
         this.wPlayer = wPlayer;
         this.bPlayer = bPlayer;
@@ -32,16 +27,13 @@ public class Game {
         moveCounter = 1;
         wScore = 39;
         bScore = 39;
-        wKills = new ArrayList<>();
-        bKills = new ArrayList<>();
         movesList = new LinkedList<>();
-        this.boardPane = boardPane;
-        active = new HashMap<>();
-        kills = new HashMap<>();
+        active = new ArrayList<>();
+        kills = new ArrayList<>();
         wTurn = true;
         initStd();
     }
-
+    // Initialize board for standard setup by creating the pieces and setting the board
     private void initStd(){
         for (int i=0; i < 8; i++){
             board.setSpot(i, 1, new Pawn(true));
@@ -69,8 +61,21 @@ public class Game {
                 bKingPos = board.getSpot(i, 7);
             }
         }
-        drawInitialBoard();
+        initActive();
     }
+    // Intialize arraylist "active" with the pieces in play.
+    private void initActive(){
+        for (int i=0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                Spot boardSpot = board.getSpot(i, j);
+                if (boardSpot.getPiece().isPresent()) {
+                    Piece curPiece = boardSpot.getPiece().get();
+                    active.add(curPiece);
+                }
+            }
+        }
+    }
+    // Checks the status of the game and returns a Status enum value.
     public Status checkStatus(){
         //TODO Implement resignation and draw
         if (inCheck()) {
@@ -97,6 +102,8 @@ public class Game {
         return inCheck(this.board, wTurn);
 
     }
+
+    // Checks if the player of the given color is in check on the given board.
     public static boolean inCheck(Board board, boolean wTurn){
         ArrayList<Spot> opponentPositions= board.getPlayerPositions(!wTurn);
         Spot curKingPos = board.getKingSpot(wTurn);
@@ -110,6 +117,7 @@ public class Game {
         }
         return false;
     }
+    // Checks if the player whose turn it is has no legal moves available.
     private boolean noLegalMoves(){
         ArrayList<Spot> playerPositions= board.getPlayerPositions(wTurn);
         ArrayList<ArrayList<Move>> allMoves = new ArrayList<>();
@@ -132,6 +140,7 @@ public class Game {
         //System.out.println("CHECKMATE");
         return true;
     }
+    // Returns a list of all the available moves for a piece at board position x,y
     public static ArrayList<Move> getLegalMoves(Board board, int x, int y){
         Spot position = board.getSpot(x, y);
         if (position == null) return null;
@@ -148,15 +157,11 @@ public class Game {
         }
         return moves;
     }
-    private ArrayList<Move> getLegalMoves(Spot position){
-        return getLegalMoves(this.board, position.getX(), position.getY());
-    }
-
-
+    // Returns the game board of this game instance.
     public Board getGameBoard() {
         return board;
     }
-
+    // Applies a move to a given game board.
     public static void applyMove(Board board, Move move){
         Spot start = move.getStart();
         Spot finish = move.getFinish();
@@ -172,12 +177,14 @@ public class Game {
         }
         board.setSpot(finish.getX(), finish.getY(), pieceMoved);
     }
+    // Applies promotion move to given game board.
     private static void applyPromotion(Board board, Move move){
         assert move.isPromotion();
         Piece promotedTo = move.getPromotedTo();
         move.getStart().setPiece(null);
         board.setSpot(move.getFinish().getX(), move.getFinish().getY(), promotedTo);
     }
+    // Applies castling move to given game board.
     private static void applyCastleMove(Board board, Move move){
         assert move.getFinish().getPiece().isPresent();
         //Spot start = move.getStart();
@@ -192,12 +199,12 @@ public class Game {
         }
         end.setPiece(null);
     }
+    // Instance method for applying a move to the board of a game instance.
     private void applyMove(Move move){
         Piece pieceMoved = move.getPieceMoved();
         if (move.isPromotion()){
             applyPromotion(this.board, move);
-            PieceCanvas newPiece = new PieceCanvas(10, 10, move.getPromotedTo());
-            active.put(move.getPromotedTo(), newPiece);
+            active.add(move.getPromotedTo());
             if(wTurn) wScore = wScore + move.getPromotedTo().getScore() - 1;
             else bScore = bScore + move.getPromotedTo().getScore() - 1;
         }
@@ -205,14 +212,12 @@ public class Game {
         if(move.getPieceKilled() != null){
             Piece killed = move.getPieceKilled();
             if (wTurn) {
-                wKills.add(killed);
                 bScore = bScore - killed.getScore();
             }
             else {
-                bKills.add(killed);
                 wScore = wScore - killed.getScore();
             }
-            kills.put(killed, active.get(killed));
+            kills.add(killed);
             //active.remove(killed);
         }
         if (pieceMoved instanceof King){
@@ -220,6 +225,7 @@ public class Game {
             else bKingPos = board.getKingSpot(false);
         }
     }
+    // Reverses given move on given game board.
     public static void undoMove(Board board, Move move){
         Spot start = move.getStart();
         Spot finish = move.getFinish();
@@ -234,19 +240,17 @@ public class Game {
         }
         //return board;
     }
+    // Reverses last move played
     private void undoMove(){ //TODO Check undoing a castling and promotion
         Move lastMove = movesList.removeLast();
         Piece pieceKilled = lastMove.getPieceKilled();
         undoMove(this.board, lastMove);
         if (pieceKilled != null){
-            //active.put(pieceKilled, kills.get(pieceKilled));
             kills.remove(pieceKilled);
             if (wTurn) {
-                wKills.remove(pieceKilled);
                 bScore = bScore + pieceKilled.getScore();
             }
             else {
-                bKills.remove(pieceKilled);
                 wScore = wScore + pieceKilled.getScore();
             }
         }
@@ -256,67 +260,13 @@ public class Game {
         }
 
     }
-    private void drawBoard(){
-        for (int i=0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                Spot boardSpot = board.getSpot(i, j);
-                Pane gridSpot = (Pane) getNodeFromGridPane(boardPane, i, j);
-                Platform.runLater(()-> {gridSpot.getChildren().clear();});
-                if (boardSpot.getPiece().isPresent()){
-                    Platform.runLater(()-> {gridSpot.getChildren().add(active.get(boardSpot.getPiece().get()));});
-                }
-                gridSpot.setBorder(null);
-            }
-        }
-    }
-    private void drawInitialBoard(){
-        Board board = getGameBoard();
-        ArrayList<PieceCanvas> wPieces = new ArrayList<>();
-        ArrayList<PieceCanvas> bPieces = new ArrayList<>();
-        for (int i=0; i < 8; i++){
-            for(int j=0; j<8; j++){
-                Spot boardSpot = board.getSpot(i, j);
-                Pane gridSpot = (Pane) getNodeFromGridPane(boardPane, i, j);
-                if (boardSpot.getPiece().isPresent()) {
-                    double x = gridSpot.getWidth();
-                    double y = gridSpot.getHeight();
-                    Piece curPiece = boardSpot.getPiece().get();
-                    //Image icon = new Image(curPiece.getIconURL());
-                    PieceCanvas canvas = new PieceCanvas(x, y, curPiece);
-                    canvas.widthProperty().bind(gridSpot.widthProperty());
-                    canvas.heightProperty().bind(gridSpot.heightProperty());
-                    canvas.draw();
-                    //GraphicsContext gc = canvas.getGraphicsContext2D();
-                    //gc.drawImage(icon, 0, 0, x, y);
-                    //canvas.setOnMouseClicked(selectPiece);
-                    gridSpot.getChildren().add(canvas);
-                    active.put(curPiece, canvas);
-                    if (curPiece.isWhite()) wPieces.add(canvas);
-                    else bPieces.add(canvas);
-                }
-                //pane.setOnMouseClicked(selectSpot);
-            }
-        }
-        wPlayer.setPieces(wPieces);
-        bPlayer.setPieces(bPieces);
-    }
 
-    protected static Node getNodeFromGridPane(GridPane gridPane, int col, int row) {
-        for (Node node : gridPane.getChildren()) {
-            if (GridPane.getColumnIndex(node) == col && GridPane.getRowIndex(node) == row) {
-                return node;
-            }
-        }
-        return null;
-    }
-    public PieceCanvas getCanvas(Piece piece){
-        if (!active.containsKey(piece)) return null;
-        return active.get(piece);
-    }
+
+
+    // Returns the list of active pieces of the player whose turn it is.
     public ArrayList<Piece> getCurrentPlayerPieces(){
-        ArrayList<Piece> allPieces = new ArrayList<>(active.keySet());
         ArrayList<Piece> curPieces = new ArrayList<>();
-        for(Piece piece : allPieces){
+        for(Piece piece : active){
             if (piece.isWhite() == wTurn){
                 curPieces.add(piece);
             }
@@ -325,21 +275,25 @@ public class Game {
     }
 
 
-    public ArrayList<Piece> getwKills() {
-        return wKills;
+    // Returns the killed pieces of a player based on the isWhite color parameter
+    public ArrayList<Piece> getPlayerKills(boolean isWhite){
+        ArrayList<Piece> pieces = new ArrayList<>();
+        for (Piece piece: kills){
+            if (piece.isWhite() == isWhite){
+                pieces.add(piece);
+            }
+        }
+        return pieces;
     }
-
-    public ArrayList<Piece> getbKills() {
-        return bKills;
-    }
-
+    // Returns the score of selected player.
     public int getScore(boolean wTurn){
         return wTurn ? wScore: bScore;
     }
-
+    // Returns the player instance whose turn it is.
     public Player getCurrentPlayer(){
         return wTurn ? wPlayer : bPlayer;
     }
+    // Checks that a move is legal then applies it to the game instance and advances turn.
     public boolean validateMove(Move move){
         if (move.getPieceMoved().isWhite() != wTurn) return false;
         if (move.getPieceMoved().canMove(board, move.getStart(), move.getFinish())){

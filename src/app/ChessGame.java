@@ -1,4 +1,4 @@
-package sample;
+package app;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -32,3 +32,5 @@ public class ChessGame extends Application {
         launch(args);
     }
 }
+
+
